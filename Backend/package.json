@@ -1,0 +1,24 @@
+{
+  "name": "pocketly",
+  "version": "1.0.0",
+  "description": "A free, simple read-it-later app (web + browser extension) for saving articles and blogs to read when you have time. ",
+  "license": "MIT",
+  "author": "Donald Ogbe, Gideon Glago",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+  "dev": "tsx watch src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js"
+},
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
