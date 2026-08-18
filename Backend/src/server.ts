@@ -1,9 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
+import corsOptions from "./middleware/cors.middleware.js";
+
 
 dotenv.config();
 
 const app = express();
+app.use(corsOptions);
 
 const PORT = process.env.PORT || 3000;
 
