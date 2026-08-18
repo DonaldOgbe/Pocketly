@@ -7,6 +7,13 @@ import './App.css'
 function App() {
   const [count, setCount] = useState(0)
 
+//   useEffect(() => {
+//   fetch('http://localhost:3000/health')
+//     .then(res => res.json())
+//     .then(data => console.log('Backend says:', data))
+//     .catch(err => console.error('CORS or connection error:', err));
+// }, []); test passed
+
   return (
     <>
       <section id="center">
