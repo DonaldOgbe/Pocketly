@@ -1,20 +1,18 @@
 import express from "express";
-import dotenv from "dotenv";
 import corsOptions from "./middleware/cors.middleware.js";
-
-
-dotenv.config();
+import { errorHandler, notFound } from "./middleware/error.middleware.js";
+import { PORT } from "./env.js";
+import routes from "./routes.js";
 
 const app = express();
+
 app.use(corsOptions);
+app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+app.use(routes);
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-  });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
