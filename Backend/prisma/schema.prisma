@@ -17,4 +17,22 @@ model User {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+
+  bookmark     Bookmark[]
+}
+
+model Bookmark {
+  id             String      @id @default(uuid())
+  userId         String
+  url            String
+  title          String?
+  metadataStatus String
+  thumbnail      String?
+  description    String?
+  isFavorite     Boolean   @default(false)
+  isRead         Boolean   @default(false)
+  savedAt        DateTime  @default(now())
+  readAt         DateTime?
+
+  user           User      @relation(fields: [userId], references: [id])
 }
