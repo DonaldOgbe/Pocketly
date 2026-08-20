@@ -23,5 +23,7 @@ function numberOr(name: string, fallback: number): number {
 }
 
 export const DATABASE_URL = required("DATABASE_URL");
+export const JWT_SECRET = required("JWT_SECRET");
+export const JWT_EXPIRES_IN = process.env["JWT_EXPIRES_IN"] ?? "7d";
 export const PORT = numberOr("PORT", 3000);
 export const BCRYPT_SALT_ROUNDS = numberOr("BCRYPT_SALT_ROUNDS", 12);

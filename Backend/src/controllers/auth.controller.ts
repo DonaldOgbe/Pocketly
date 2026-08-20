@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import prisma from "../db.js";
-import { BCRYPT_SALT_ROUNDS } from "../env.js";
+import { BCRYPT_SALT_ROUNDS, JWT_EXPIRES_IN, JWT_SECRET } from "../env.js";
 
 // Deliberately permissive: one @, something either side, a dot in the domain.
 // Real deliverability is proven by sending mail, not by a clever regex.
@@ -12,6 +13,18 @@ const MIN_PASSWORD_LENGTH = 8;
 // bcrypt silently truncates anything past 72 bytes, which would make two
 // different long passwords equivalent. Reject instead of quietly accepting.
 const MAX_PASSWORD_BYTES = 72;
+
+// Keeps the unknown-email path as slow as a real one, so response time
+// can't reveal which accounts exist.
+const ABSENT_USER_HASH = bcrypt.hashSync(
+  "no password produces this hash",
+  BCRYPT_SALT_ROUNDS,
+);
+
+// Register and login must normalise identically.
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 type RegisterBody = {
   email?: unknown;
@@ -27,7 +40,7 @@ export async function register(req: Request, res: Response) {
 
   // Store one canonical form so Foo@Example.com and foo@example.com cannot
   // both be registered — the unique index is case-sensitive.
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
 
   if (!EMAIL_PATTERN.test(normalizedEmail)) {
     return res.status(400).json({ error: "email is not valid" });
@@ -62,6 +75,39 @@ export async function register(req: Request, res: Response) {
     }
     throw error;
   }
+}
+
+type LoginBody = {
+  email?: unknown;
+  password?: unknown;
+};
+
+export async function login(req: Request, res: Response) {
+  const { email, password } = (req.body ?? {}) as LoginBody;
+
+  if (typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({ error: "email and password are required" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: normalizeEmail(email) },
+  });
+
+  const matches = await bcrypt.compare(password, user?.passwordHash ?? ABSENT_USER_HASH);
+
+  if (!user || !matches) {
+    // Same message either way, so neither confirms an account exists.
+    return res.status(401).json({ error: "email or password is incorrect" });
+  }
+
+  const token = jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"],
+  });
+
+  return res.status(200).json({
+    token,
+    user: { id: user.id, email: user.email },
+  });
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
