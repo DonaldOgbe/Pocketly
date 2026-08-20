@@ -36,5 +36,8 @@ model Bookmark {
   savedAt        DateTime  @default(now())
   readAt         DateTime?
 
-  user           User      @relation(fields: [userId], references: [id])
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // GET /bookmarks filters on userId and orders by savedAt.
+  @@index([userId, savedAt])
 }
