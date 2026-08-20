@@ -68,7 +68,7 @@ export const saveBookmark = async (req: Request, res: Response) => {
     });
   }
 
-   if (!req.user) {
+  if (!req.user) {
     return res.status(401).json({
       error: "Unauthorized",
     });
@@ -83,7 +83,6 @@ export const saveBookmark = async (req: Request, res: Response) => {
       },
     });
 
-    
     fetchMetadata(bookmark.id, bookmark.url);
 
     return res.status(201).json(bookmark);
@@ -94,4 +93,29 @@ export const saveBookmark = async (req: Request, res: Response) => {
       error: "Internal server error",
     });
   }
+};
+
+export const getBookmark = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+
+  // pagination limit of 10
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = 10;
+  const skip = (page - 1) * limit;
+
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId: req.user.id },
+    orderBy: { savedAt: "desc" },
+    skip,
+    take: limit,
+  });
+
+  res.status(200).json({
+    bookmarks,
+    page
+  })
 };
