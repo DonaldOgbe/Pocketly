@@ -25,9 +25,11 @@ model Bookmark {
   id             String      @id @default(uuid())
   userId         String
   url            String
+  domain         String
   title          String?
   metadataStatus String
   thumbnail      String?
+  favicon        String?
   description    String?
   isFavorite     Boolean   @default(false)
   isRead         Boolean   @default(false)

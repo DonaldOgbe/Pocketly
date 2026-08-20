@@ -1,8 +1,9 @@
 import { URL } from "node:url";
 import type { Request, Response } from "express";
 import prisma from "../db.js";
+import { getMetadata } from "../services/metadata.service.js";
 
-const validateUrl = (url: unknown): { isValid: boolean; error?: string } => {
+const validateUrl = (url: unknown): { isValid: boolean; error?: string, domain?: string } => {
   if (typeof url !== "string" || !url.trim()) {
     return { isValid: false, error: "url is required" };
   }
@@ -17,7 +18,8 @@ const validateUrl = (url: unknown): { isValid: boolean; error?: string } => {
       };
     }
 
-    return { isValid: true };
+
+    return { isValid: true , domain: parsedUrl.hostname};
   } catch {
     return { isValid: false, error: "url is not valid" };
   }
@@ -25,21 +27,17 @@ const validateUrl = (url: unknown): { isValid: boolean; error?: string } => {
 
 const fetchMetadata = async (bookmarkId: string, url: string) => {
   try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch URL: ${response.status}`);
-    }
-
-    const html = await response.text();
-
-    console.log(`Fetched ${html.length} characters from ${url}`);
+    const metadata = await getMetadata(url);
 
     await prisma.bookmark.update({
       where: {
         id: bookmarkId,
       },
       data: {
+        title: metadata.title,
+        description: metadata.description,
+        thumbnail: metadata.thumbnail,
+        favicon: metadata.favicon,
         metadataStatus: "SUCCESS",
       },
     });
@@ -62,6 +60,8 @@ export const saveBookmark = async (req: Request, res: Response) => {
 
   const validation = validateUrl(url);
 
+  const domain = new URL(url).hostname;
+
   if (!validation.isValid) {
     return res.status(400).json({
       error: validation.error,
@@ -78,6 +78,7 @@ export const saveBookmark = async (req: Request, res: Response) => {
     const bookmark = await prisma.bookmark.create({
       data: {
         url,
+        domain: domain,
         userId: req.user.id,
         metadataStatus: "PENDING",
       },

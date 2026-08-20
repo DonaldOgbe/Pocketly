@@ -12,7 +12,7 @@ router.get("/health", (_req, res) => {
 
 router.post("/auth/register", register);
 
-router.post("/bookmark", fakeAuth, saveBookmark);
+router.post("/bookmarks", fakeAuth, saveBookmark);
 
 router.get("/bookmarks", fakeAuth, getBookmark);
 
