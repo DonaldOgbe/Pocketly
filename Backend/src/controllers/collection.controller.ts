@@ -121,3 +121,79 @@ export const deleteCollection = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const addBookmarkToCollection = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const { id } = req.params;
+  const { bookmarkId } = req.body;
+
+  if (typeof id !== "string") {
+    return res.status(400).json({ error: "Collection ID is required" });
+  }
+
+  if (typeof bookmarkId !== "string" || !bookmarkId.trim()) {
+    return res.status(400).json({ error: "Bookmark ID is required" });
+  }
+
+  try {
+    // Both sides are checked. Verifying only the collection would let someone
+    // file another user's bookmark into their own collection.
+    const [collection, bookmark] = await Promise.all([
+      prisma.collection.findFirst({ where: { id, userId: req.user.id } }),
+      prisma.bookmark.findFirst({ where: { id: bookmarkId, userId: req.user.id } }),
+    ]);
+
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    if (!bookmark) {
+      return res.status(404).json({ error: "Bookmark not found" });
+    }
+
+    await prisma.collection.update({
+      where: { id },
+      data: { bookmarks: { connect: { id: bookmarkId } } },
+    });
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(`Failed to add bookmark ${bookmarkId} to collection ${id}`, error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const removeBookmarkFromCollection = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const { id, bookmarkId } = req.params;
+
+  if (typeof id !== "string" || typeof bookmarkId !== "string") {
+    return res.status(400).json({ error: "Collection ID and bookmark ID are required" });
+  }
+
+  try {
+    const collection = await prisma.collection.findFirst({
+      where: { id, userId: req.user.id },
+    });
+
+    if (!collection) {
+      return res.status(404).json({ error: "Collection not found" });
+    }
+
+    await prisma.collection.update({
+      where: { id },
+      data: { bookmarks: { disconnect: { id: bookmarkId } } },
+    });
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(`Failed to remove bookmark ${bookmarkId} from collection ${id}`, error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
