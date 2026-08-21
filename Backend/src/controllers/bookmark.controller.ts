@@ -60,7 +60,7 @@ const fetchMetadata = async (bookmarkId: string, url: string) => {
 };
 
 export const saveBookmark = async (req: Request, res: Response) => {
-  const { url } = req.body;
+  const { url, isFavorite } = req.body;
 
   const validation = validateUrl(url);
 
@@ -83,11 +83,10 @@ export const saveBookmark = async (req: Request, res: Response) => {
         domain: validation.domain,
         userId: req.user.id,
         metadataStatus: "PENDING",
+        isFavorite: typeof isFavorite === "boolean" ? isFavorite : false,
       },
     });
 
-    // Deliberately not awaited so the save returns immediately, but an
-    // unhandled rejection here would take the whole process down.
     fetchMetadata(bookmark.id, bookmark.url).catch((error) => {
       console.error(`Metadata update failed for bookmark ${bookmark.id}`, error);
     });
@@ -95,6 +94,52 @@ export const saveBookmark = async (req: Request, res: Response) => {
     return res.status(201).json(bookmark);
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+};
+
+export const toggleFavorite = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({
+      error: "Bookmark ID is required",
+    });
+  }
+
+  try {
+    const bookmark = await prisma.bookmark.findFirst({
+      where: {
+        id,
+        userId: req.user.id,
+      },
+    });
+
+    if (!bookmark) {
+      return res.status(404).json({
+        error: "Bookmark not found",
+      });
+    }
+
+    const updatedBookmark = await prisma.bookmark.update({
+      where: { id },
+      data: {
+        isFavorite: !bookmark.isFavorite,
+      },
+    });
+
+    return res.status(200).json(updatedBookmark);
+  } catch (error) {
+    console.error(`Failed to toggle favorite for bookmark ${id}`, error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -126,4 +171,51 @@ export const getBookmark = async (req: Request, res: Response) => {
     bookmarks,
     page
   })
+};
+
+export const deleteBookmark = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+
+  const { id } = req.params;
+
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({
+      error: "Bookmark ID is required",
+    });
+  }
+
+  try {
+    const bookmark = await prisma.bookmark.findFirst({
+      where: {
+        id,
+        userId: req.user.id,
+      },
+    });
+
+    if (!bookmark) {
+      return res.status(404).json({
+        error: "Bookmark not found",
+      });
+    }
+
+    await prisma.bookmark.delete({
+      where: {
+        id,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Bookmark deleted successfully",
+    });
+  } catch (error) {
+    console.error(`Failed to delete bookmark ${id}`, error);
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
 };
