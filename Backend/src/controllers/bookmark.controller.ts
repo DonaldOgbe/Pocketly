@@ -3,7 +3,11 @@ import type { Request, Response } from "express";
 import prisma from "../db.js";
 import { getMetadata } from "../services/metadata.service.js";
 
-const validateUrl = (url: unknown): { isValid: boolean; error?: string, domain?: string } => {
+type UrlValidation =
+  | { isValid: true; domain: string }
+  | { isValid: false; error: string };
+
+const validateUrl = (url: unknown): UrlValidation => {
   if (typeof url !== "string" || !url.trim()) {
     return { isValid: false, error: "url is required" };
   }
@@ -19,7 +23,7 @@ const validateUrl = (url: unknown): { isValid: boolean; error?: string, domain?:
     }
 
 
-    return { isValid: true , domain: parsedUrl.hostname};
+    return { isValid: true, domain: parsedUrl.hostname };
   } catch {
     return { isValid: false, error: "url is not valid" };
   }
@@ -60,8 +64,6 @@ export const saveBookmark = async (req: Request, res: Response) => {
 
   const validation = validateUrl(url);
 
-  const domain = new URL(url).hostname;
-
   if (!validation.isValid) {
     return res.status(400).json({
       error: validation.error,
@@ -78,13 +80,17 @@ export const saveBookmark = async (req: Request, res: Response) => {
     const bookmark = await prisma.bookmark.create({
       data: {
         url,
-        domain: domain,
+        domain: validation.domain,
         userId: req.user.id,
         metadataStatus: "PENDING",
       },
     });
 
-    fetchMetadata(bookmark.id, bookmark.url);
+    // Deliberately not awaited so the save returns immediately, but an
+    // unhandled rejection here would take the whole process down.
+    fetchMetadata(bookmark.id, bookmark.url).catch((error) => {
+      console.error(`Metadata update failed for bookmark ${bookmark.id}`, error);
+    });
 
     return res.status(201).json(bookmark);
   } catch (error) {
@@ -104,7 +110,8 @@ export const getBookmark = async (req: Request, res: Response) => {
   }
 
   // pagination limit of 10
-  const page = parseInt(req.query.page as string) || 1;
+  const requestedPage = parseInt(req.query.page as string, 10);
+  const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const limit = 10;
   const skip = (page - 1) * limit;
 

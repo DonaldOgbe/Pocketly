@@ -1,7 +1,13 @@
 import * as cheerio from "cheerio";
 
+// A bookmarked page is someone else's server. Without this a slow or hanging
+// host holds the connection open indefinitely.
+const FETCH_TIMEOUT_MS = 10_000;
+
 const fetchHtml = async (url: string) => {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch URL: ${response.status}`);
