@@ -1,10 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import prisma from "../db.js";
 import { JWT_SECRET } from "../env.js";
 
 const BEARER = "Bearer ";
 
-export function requireAuth(
+export async function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction
@@ -17,28 +18,21 @@ export function requireAuth(
     });
   }
 
+  let payload: jwt.JwtPayload;
+
   try {
-    const payload = jwt.verify(
+    const verified = jwt.verify(
       header.slice(BEARER.length).trim(),
       JWT_SECRET
     );
 
-    if (
-      typeof payload === "string" ||
-      typeof payload.sub !== "string" ||
-      typeof payload.email !== "string"
-    ) {
+    if (typeof verified === "string") {
       return res.status(401).json({
         error: "invalid token",
       });
     }
 
-    req.user = {
-      id: payload.sub,
-      email: payload.email,
-    };
-
-    return next();
+    payload = verified;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({
@@ -50,4 +44,37 @@ export function requireAuth(
       error: "invalid token",
     });
   }
+
+  const { sub, email, jti, exp } = payload;
+
+  if (
+    typeof sub !== "string" ||
+    typeof email !== "string" ||
+    typeof jti !== "string" ||
+    typeof exp !== "number"
+  ) {
+    return res.status(401).json({
+      error: "invalid token",
+    });
+  }
+
+  const revoked = await prisma.revokedToken.findUnique({ where: { jti } });
+
+  if (revoked) {
+    return res.status(401).json({
+      error: "token revoked",
+    });
+  }
+
+  req.user = {
+    id: sub,
+    email,
+  };
+
+  req.token = {
+    jti,
+    expiresAt: new Date(exp * 1000),
+  };
+
+  return next();
 }
