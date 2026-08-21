@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { login, logout, register } from "./controllers/auth.controller.js";
-import { deleteBookmark, getBookmark, saveBookmark, toggleFavorite } from "./controllers/bookmark.controller.js";
+import { deleteBookmark, getBookmark, saveBookmark, toggleFavorite , updateBookmark} from "./controllers/bookmark.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
+import { createCollection, getCollections, updateCollection, deleteCollection } from "./controllers/collection.controller.js";
 
 
 const router = Router();
@@ -16,12 +17,17 @@ router.post("/auth/login", login);
 
 router.post("/auth/logout", requireAuth, logout);
 
+// Bookmark Routes
 router.post("/bookmarks", requireAuth, saveBookmark);
-
 router.get("/bookmarks", requireAuth, getBookmark);
-
+router.patch("/bookmarks/:id", requireAuth, updateBookmark);
+router.patch("/bookmarks/:id/favorite", requireAuth, toggleFavorite);
 router.delete("/bookmarks/:id", requireAuth, deleteBookmark);
 
-router.patch("/bookmarks/:id/favorite", requireAuth, toggleFavorite);
+// Collection Routes
+router.post("/collections", requireAuth, createCollection);
+router.get("/collections", requireAuth, getCollections);
+router.patch("/collections/:id", requireAuth, updateCollection);
+router.delete("/collections/:id", requireAuth, deleteCollection);
 
 export default router;
