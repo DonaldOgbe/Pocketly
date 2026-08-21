@@ -20,6 +20,7 @@ model User {
 
   bookmark     Bookmark[]
   revokedTokens RevokedToken[]
+  collections   Collection[]
 }
 
 model Bookmark {
@@ -38,6 +39,7 @@ model Bookmark {
   readAt         DateTime?
 
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collections     Collection[]
 
   // GET /bookmarks filters on userId and orders by savedAt.
   @@index([userId, savedAt])
@@ -52,4 +54,16 @@ model RevokedToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+}
+
+model Collection {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
+
+  @@index([userId])
 }
