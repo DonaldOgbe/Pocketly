@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
@@ -100,7 +101,9 @@ export async function login(req: Request, res: Response) {
     return res.status(401).json({ error: "email or password is incorrect" });
   }
 
+  // jti is what logout revokes; without it a token can't be singled out.
   const token = jwt.sign({ sub: user.id, email: user.email }, JWT_SECRET, {
+    jwtid: randomUUID(),
     expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"],
   });
 
@@ -117,4 +120,27 @@ function isUniqueConstraintError(error: unknown): boolean {
     "code" in error &&
     (error as { code: unknown }).code === "P2002"
   );
+}
+
+export async function logout(req: Request, res: Response) {
+  if (!req.user || !req.token) {
+    return res.status(401).json({ error: "authentication required" });
+  }
+
+  await prisma.revokedToken.createMany({
+    data: {
+      jti: req.token.jti,
+      userId: req.user.id,
+      expiresAt: req.token.expiresAt,
+    },
+    // Logging out twice is not an error.
+    skipDuplicates: true,
+  });
+
+  // Once a token would have expired anyway, the row stops earning its keep.
+  await prisma.revokedToken.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+
+  return res.status(204).end();
 }

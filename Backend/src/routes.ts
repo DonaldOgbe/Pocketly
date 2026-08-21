@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register } from "./controllers/auth.controller.js";
+import { login, logout, register } from "./controllers/auth.controller.js";
 import { getBookmark, saveBookmark } from "./controllers/bookmark.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 
@@ -13,6 +13,8 @@ router.get("/health", (_req, res) => {
 router.post("/auth/register", register);
 
 router.post("/auth/login", login);
+
+router.post("/auth/logout", requireAuth, logout);
 
 router.post("/bookmarks", requireAuth, saveBookmark);
 

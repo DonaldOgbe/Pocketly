@@ -19,6 +19,7 @@ model User {
   createdAt    DateTime @default(now())
 
   bookmark     Bookmark[]
+  revokedTokens RevokedToken[]
 }
 
 model Bookmark {
@@ -40,4 +41,15 @@ model Bookmark {
 
   // GET /bookmarks filters on userId and orders by savedAt.
   @@index([userId, savedAt])
+}
+
+// Revoked token ids. A row only has to outlive the token it revokes.
+model RevokedToken {
+  jti       String   @id
+  userId    String
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }

@@ -7,6 +7,10 @@ declare global {
         id: string;
         email: string;
       };
+      token?: {
+        jti: string;
+        expiresAt: Date;
+      };
     }
   }
 }
