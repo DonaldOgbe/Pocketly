@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { login, register } from "./controllers/auth.controller.js";
 import { getBookmark, saveBookmark } from "./controllers/bookmark.controller.js";
-import { fakeAuth } from "./middleware/fakeauth.middleware.js";
+import { requireAuth } from "./middleware/auth.middleware.js";
 
 // Every route in the app is declared here, then mounted once in server.ts.
 const router = Router();
@@ -14,8 +14,8 @@ router.post("/auth/register", register);
 
 router.post("/auth/login", login);
 
-router.post("/bookmarks", fakeAuth, saveBookmark);
+router.post("/bookmarks", requireAuth, saveBookmark);
 
-router.get("/bookmarks", fakeAuth, getBookmark);
+router.get("/bookmarks", requireAuth, getBookmark);
 
 export default router;
