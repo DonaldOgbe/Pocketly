@@ -18,9 +18,10 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 
-  bookmark     Bookmark[]
+  bookmark      Bookmark[]
   revokedTokens RevokedToken[]
   collections   Collection[]
+  tags          Tag[]
 }
 
 model Bookmark {
@@ -40,6 +41,7 @@ model Bookmark {
 
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   collections     Collection[]
+  tags            Tag[]
 
   // GET /bookmarks filters on userId and orders by savedAt.
   @@index([userId, savedAt])
@@ -66,4 +68,16 @@ model Collection {
   bookmarks Bookmark[]
 
   @@index([userId])
+}
+
+
+model Tag {
+  id        String     @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime   @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  bookmarks Bookmark[] 
+  @@unique([userId, name]) // not duplicate tags
 }
