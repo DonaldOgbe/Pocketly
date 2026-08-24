@@ -3,7 +3,7 @@ import { login, logout, register } from "./controllers/auth.controller.js";
 import { deleteBookmark, getBookmark, saveBookmark, toggleFavorite , updateBookmark} from "./controllers/bookmark.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 import { createCollection, getCollections, updateCollection, deleteCollection, addBookmarkToCollection, removeBookmarkFromCollection } from "./controllers/collection.controller.js";
-
+import {createTag, getTags, updateTag, deleteTag, addBookmarkToTag, removeBookmarkFromTag} from "./controllers/tag.controller.js"
 
 const router = Router();
 
@@ -31,7 +31,17 @@ router.patch("/collections/:id", requireAuth, updateCollection);
 router.delete("/collections/:id", requireAuth, deleteCollection);
 
 router.post("/collections/:id/bookmarks", requireAuth, addBookmarkToCollection);
-
 router.delete("/collections/:id/bookmarks/:bookmarkId", requireAuth, removeBookmarkFromCollection);
+
+// Tag Routes
+router.post("/tags", requireAuth, createTag);
+router.get("/tags", requireAuth, getTags);
+router.patch("/tags/:id", requireAuth, updateTag);
+router.delete("/tags/:id", requireAuth, deleteTag);
+
+router.post("/tags/:id/bookmarks", requireAuth, addBookmarkToTag);
+router.delete("/tags/:id/bookmarks/:bookmarkId", requireAuth, removeBookmarkFromTag);
+
+
 
 export default router;
