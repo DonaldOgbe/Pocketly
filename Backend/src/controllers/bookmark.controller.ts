@@ -163,8 +163,28 @@ export const getBookmark = async (req: Request, res: Response) => {
   const limit = 10;
   const skip = (page - 1) * limit;
 
+  const { tag, collection, favorite, search } = req.query;
+
+  const where: any = { userId: req.user.id };
+
+  if (favorite === "true") {
+    where.isFavorite = true;
+  }
+
+  if (typeof search === "string" && search.trim()) {
+    where.title = { contains: search.trim(), mode: "insensitive" };
+  }
+
+  if (typeof tag === "string" && tag.trim()) {
+    where.tags = { some: { name: tag.trim() } };
+  }
+
+  if (typeof collection === "string" && collection.trim()) {
+    where.collections = { some: { id: collection.trim() } };
+  }
+
   const bookmarks = await prisma.bookmark.findMany({
-    where: { userId: req.user.id },
+    where,
     orderBy: { savedAt: "desc" },
     skip,
     take: limit,
@@ -175,7 +195,6 @@ export const getBookmark = async (req: Request, res: Response) => {
     page,
   });
 };
-
 export const updateBookmark = async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: "Unauthorized" });
