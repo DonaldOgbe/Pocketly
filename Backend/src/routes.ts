@@ -2,7 +2,7 @@ import { Router } from "express";
 import { login, logout, register } from "./controllers/auth.controller.js";
 import { deleteBookmark, getBookmark, saveBookmark, toggleFavorite , updateBookmark} from "./controllers/bookmark.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
-import { createCollection, getCollections, updateCollection, deleteCollection } from "./controllers/collection.controller.js";
+import { createCollection, getCollections, updateCollection, deleteCollection, addBookmarkToCollection, removeBookmarkFromCollection } from "./controllers/collection.controller.js";
 
 
 const router = Router();
@@ -29,5 +29,9 @@ router.post("/collections", requireAuth, createCollection);
 router.get("/collections", requireAuth, getCollections);
 router.patch("/collections/:id", requireAuth, updateCollection);
 router.delete("/collections/:id", requireAuth, deleteCollection);
+
+router.post("/collections/:id/bookmarks", requireAuth, addBookmarkToCollection);
+
+router.delete("/collections/:id/bookmarks/:bookmarkId", requireAuth, removeBookmarkFromCollection);
 
 export default router;
