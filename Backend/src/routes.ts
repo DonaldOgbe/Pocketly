@@ -2,6 +2,7 @@ import { Router } from "express";
 import { login, logout, register } from "./controllers/auth.controller.js";
 import { deleteBookmark, getBookmark, saveBookmark, toggleFavorite , updateBookmark} from "./controllers/bookmark.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
+import { authLimiter } from "./middleware/ratelimit.middleware.js";
 import { createCollection, getCollections, updateCollection, deleteCollection, addBookmarkToCollection, removeBookmarkFromCollection } from "./controllers/collection.controller.js";
 import {createTag, getTags, updateTag, deleteTag, addBookmarkToTag, removeBookmarkFromTag} from "./controllers/tag.controller.js"
 
@@ -11,9 +12,9 @@ router.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-router.post("/auth/register", register);
+router.post("/auth/register", authLimiter, register);
 
-router.post("/auth/login", login);
+router.post("/auth/login", authLimiter, login);
 
 router.post("/auth/logout", requireAuth, logout);
 

@@ -30,7 +30,7 @@ model Bookmark {
   url            String
   domain         String
   title          String?
-  metadataStatus String
+  metadataStatus MetadataStatus @default(PENDING)
   thumbnail      String?
   favicon        String?
   description    String?
@@ -67,6 +67,7 @@ model Collection {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookmarks Bookmark[]
 
+  @@unique([userId, name])
   @@index([userId])
 }
 
@@ -77,7 +78,13 @@ model Tag {
   name      String
   createdAt DateTime   @default(now())
 
-  user      User       @relation(fields: [userId], references: [id])
-  bookmarks Bookmark[] 
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
   @@unique([userId, name]) // not duplicate tags
+}
+
+enum MetadataStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }

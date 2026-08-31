@@ -1,6 +1,7 @@
 import { URL } from "node:url";
 import type { Request, Response } from "express";
 import prisma from "../db.js";
+import type { Prisma } from "../generated/prisma/client.js";
 import { getMetadata } from "../services/metadata.service.js";
 
 type UrlValidation =
@@ -163,9 +164,13 @@ export const getBookmark = async (req: Request, res: Response) => {
   const limit = 10;
   const skip = (page - 1) * limit;
 
-  const { tag, collection, favorite, search } = req.query;
+  const { tag, collection, favorite } = req.query;
 
-  const where: any = { userId: req.user.id };
+  // `q` is the documented name; `search` is accepted so existing callers keep
+  // working.
+  const search = req.query.q ?? req.query.search;
+
+  const where: Prisma.BookmarkWhereInput = { userId: req.user.id };
 
   if (favorite === "true") {
     where.isFavorite = true;
@@ -175,24 +180,38 @@ export const getBookmark = async (req: Request, res: Response) => {
     where.title = { contains: search.trim(), mode: "insensitive" };
   }
 
+  // Tags and collections both accept an id or a name, so callers don't have to
+  // know which one a given filter wants. Scoped to the user either way.
   if (typeof tag === "string" && tag.trim()) {
-    where.tags = { some: { name: tag.trim() } };
+    const value = tag.trim();
+    where.tags = {
+      some: { userId: req.user.id, OR: [{ id: value }, { name: value }] },
+    };
   }
 
   if (typeof collection === "string" && collection.trim()) {
-    where.collections = { some: { id: collection.trim() } };
+    const value = collection.trim();
+    where.collections = {
+      some: { userId: req.user.id, OR: [{ id: value }, { name: value }] },
+    };
   }
 
-  const bookmarks = await prisma.bookmark.findMany({
-    where,
-    orderBy: { savedAt: "desc" },
-    skip,
-    take: limit,
-  });
+  const [bookmarks, total] = await Promise.all([
+    prisma.bookmark.findMany({
+      where,
+      orderBy: { savedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.bookmark.count({ where }),
+  ]);
 
   res.status(200).json({
     bookmarks,
     page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
   });
 };
 export const updateBookmark = async (req: Request, res: Response) => {

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../db.js";
+import { isUniqueConstraintError } from "../prisma-errors.js";
 import { BCRYPT_SALT_ROUNDS, JWT_EXPIRES_IN, JWT_SECRET } from "../env.js";
 
 // Deliberately permissive: one @, something either side, a dot in the domain.
@@ -113,14 +114,6 @@ export async function login(req: Request, res: Response) {
   });
 }
 
-function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "P2002"
-  );
-}
 
 export async function logout(req: Request, res: Response) {
   if (!req.user || !req.token) {

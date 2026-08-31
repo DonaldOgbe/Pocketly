@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../db.js";
+import { isUniqueConstraintError } from "../prisma-errors.js";
 
 export const createTag = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -37,6 +38,10 @@ export const createTag = async (req: Request, res: Response) => {
 
     return res.status(201).json(tag);
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return res.status(409).json({ error: "Tag already exists" });
+    }
+
     console.error("Failed to create tag", error);
     return res.status(500).json({ error: "Internal server error" });
   }

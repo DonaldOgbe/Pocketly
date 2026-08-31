@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../db.js";
+import { isUniqueConstraintError } from "../prisma-errors.js";
 
 export const createCollection = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -22,6 +23,10 @@ export const createCollection = async (req: Request, res: Response) => {
 
     return res.status(201).json(collection);
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return res.status(409).json({ error: "Collection already exists" });
+    }
+
     console.error("Failed to create collection", error);
     return res.status(500).json({ error: "Internal server error" });
   }
