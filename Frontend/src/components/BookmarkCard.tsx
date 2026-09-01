@@ -37,7 +37,7 @@ const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
       <button
         type="button"
         className={`shrink-0 self-start text-xl transition hover:scale-110 ${
-          bookmark.isFavorite ? "text-brand-pink" : "text-gray-300"
+          bookmark.isFavorite ? "text-brand-green" : "text-gray-300"
         }`}
         aria-label={
           bookmark.isFavorite ? "Remove from favorites" : "Add to favorites"
