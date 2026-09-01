@@ -1,14 +1,35 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import BookmarksPage from "./pages/BookmarksPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+const Dashboard = () => (
+  <div className="flex">
+    <Sidebar />
+    <div className="flex-1">
+      <BookmarksPage />
+    </div>
+  </div>
+);
 
 function App() {
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1">
-        <BookmarksPage />
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
