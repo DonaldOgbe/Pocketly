@@ -15,3 +15,11 @@ export type Bookmark = {
   savedAt: string;
   readAt: string | null;
 };
+
+export type BookmarksResponse = {
+  bookmarks: Bookmark[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};

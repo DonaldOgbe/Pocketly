@@ -2,11 +2,20 @@ import type { Bookmark } from "../types/bookmark";
 
 type BookmarkCardProps = {
   bookmark: Bookmark;
+  isSelected?: boolean;
+  onClick?: () => void;
 };
 
-const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
+const BookmarkCard = ({ bookmark, isSelected = false, onClick }: BookmarkCardProps) => {
   return (
-    <article className="group flex gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm">
+    <article
+      onClick={onClick}
+      className={`flex cursor-pointer gap-4 rounded-xl border p-4 transition ${
+        isSelected
+          ? "border-brand-pink bg-brand-pink-light"
+          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+      }`}
+    >
       <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
         {bookmark.thumbnail ? (
           <img
@@ -36,6 +45,7 @@ const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
 
       <button
         type="button"
+        onClick={(e) => e.stopPropagation()}
         className={`shrink-0 self-start text-xl transition hover:scale-110 ${
           bookmark.isFavorite ? "text-brand-green" : "text-gray-300"
         }`}
