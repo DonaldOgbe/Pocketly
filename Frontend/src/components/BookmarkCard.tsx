@@ -6,8 +6,8 @@ type BookmarkCardProps = {
 
 const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
   return (
-    <article className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm">
-      <div className="h-24 w-32 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+    <article className="group flex gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm">
+      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
         {bookmark.thumbnail ? (
           <img
             src={bookmark.thumbnail}
@@ -15,7 +15,7 @@ const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
+          <div className="flex h-full items-center justify-center text-xs text-gray-400">
             No image
           </div>
         )}
@@ -28,26 +28,19 @@ const BookmarkCard = ({ bookmark }: BookmarkCardProps) => {
 
         <div className="mt-2 flex items-center gap-2">
           {bookmark.favicon && (
-            <img
-              src={bookmark.favicon}
-              alt=""
-              className="h-4 w-4"
-            />
+            <img src={bookmark.favicon} alt="" className="h-4 w-4" />
           )}
-
-          <span className="text-sm text-gray-500">
-            {bookmark.domain}
-          </span>
+          <span className="text-sm text-gray-500">{bookmark.domain}</span>
         </div>
       </div>
 
       <button
         type="button"
-        className="shrink-0 self-start text-xl"
+        className={`shrink-0 self-start text-xl transition hover:scale-110 ${
+          bookmark.isFavorite ? "text-brand-pink" : "text-gray-300"
+        }`}
         aria-label={
-          bookmark.isFavorite
-            ? "Remove from favorites"
-            : "Add to favorites"
+          bookmark.isFavorite ? "Remove from favorites" : "Add to favorites"
         }
       >
         {bookmark.isFavorite ? "★" : "☆"}
