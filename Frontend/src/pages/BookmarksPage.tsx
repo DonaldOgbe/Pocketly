@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
+import SaveBookmarkModal from "../components/SaveBookmarkModal";
 import { fetchBookmarks } from "../api/bookmarks";
 import type { Bookmark } from "../types/bookmark";
 
@@ -9,6 +10,7 @@ const BookmarksPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -30,6 +32,10 @@ const BookmarksPage = () => {
   }, []);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedId) ?? null;
+
+  const handleSaved = (bookmark: Bookmark) => {
+    setBookmarks((prev) => [bookmark, ...prev]);
+  };
 
   return (
     <div className="flex">
@@ -53,6 +59,7 @@ const BookmarksPage = () => {
               />
               <button
                 type="button"
+                onClick={() => setIsModalOpen(true)}
                 className="rounded-lg bg-brand-pink px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
               >
                 + Save
@@ -91,6 +98,13 @@ const BookmarksPage = () => {
         <BookmarkPreview
           bookmark={selectedBookmark}
           onClose={() => setSelectedId(null)}
+        />
+      )}
+
+      {isModalOpen && (
+        <SaveBookmarkModal
+          onClose={() => setIsModalOpen(false)}
+          onSaved={handleSaved}
         />
       )}
     </div>
