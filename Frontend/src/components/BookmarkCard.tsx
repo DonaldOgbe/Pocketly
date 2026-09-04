@@ -4,9 +4,15 @@ type BookmarkCardProps = {
   bookmark: Bookmark;
   isSelected?: boolean;
   onClick?: () => void;
+  onToggleFavorite?: () => void;
 };
 
-const BookmarkCard = ({ bookmark, isSelected = false, onClick }: BookmarkCardProps) => {
+const BookmarkCard = ({
+  bookmark,
+  isSelected = false,
+  onClick,
+  onToggleFavorite,
+}: BookmarkCardProps) => {
   return (
     <article
       onClick={onClick}
@@ -45,7 +51,10 @@ const BookmarkCard = ({ bookmark, isSelected = false, onClick }: BookmarkCardPro
 
       <button
         type="button"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite?.();
+        }}
         className={`shrink-0 self-start text-xl transition hover:scale-110 ${
           bookmark.isFavorite ? "text-brand-green" : "text-gray-300"
         }`}

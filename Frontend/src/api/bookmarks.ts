@@ -24,3 +24,16 @@ export async function createBookmark(url: string): Promise<Bookmark> {
 
   return response.json();
 }
+
+export async function toggleFavorite(id: string): Promise<Bookmark> {
+  const response = await apiFetch(`/bookmarks/${id}/favorite`, {
+    method: "PATCH",
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? `Failed to toggle favorite: ${response.status}`);
+  }
+
+  return response.json();
+}
