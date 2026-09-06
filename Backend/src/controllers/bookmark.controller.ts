@@ -196,15 +196,19 @@ export const getBookmark = async (req: Request, res: Response) => {
     };
   }
 
-  const [bookmarks, total] = await Promise.all([
-    prisma.bookmark.findMany({
-      where,
-      orderBy: { savedAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.bookmark.count({ where }),
-  ]);
+ const [bookmarks, total] = await Promise.all([
+  prisma.bookmark.findMany({
+    where,
+    orderBy: { savedAt: "desc" },
+    skip,
+    take: limit,
+    include: {
+      tags: { select: { id: true, name: true } },
+      collections: { select: { id: true, name: true } },
+    },
+  }),
+  prisma.bookmark.count({ where }),
+]);
 
   res.status(200).json({
     bookmarks,
