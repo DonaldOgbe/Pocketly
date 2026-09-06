@@ -1,5 +1,10 @@
 export type MetadataStatus = "PENDING" | "SUCCESS" | "FAILED";
 
+export type BookmarkRef = {
+  id: string;
+  name: string;
+};
+
 export type Bookmark = {
   id: string;
   userId: string;
@@ -14,6 +19,8 @@ export type Bookmark = {
   isRead: boolean;
   savedAt: string;
   readAt: string | null;
+  tags: BookmarkRef[];
+  collections: BookmarkRef[];
 };
 
 export type BookmarksResponse = {
