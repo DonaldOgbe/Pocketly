@@ -1,8 +1,22 @@
 import { apiFetch } from "./client";
-import type { BookmarksResponse, Bookmark } from "../types/bookmark";
+import type { BookmarksResponse, Bookmark, BookmarkFilter } from "../types/bookmark";
 
-export async function fetchBookmarks(page = 1): Promise<BookmarksResponse> {
-  const response = await apiFetch(`/bookmarks?page=${page}`);
+
+export async function fetchBookmarks(
+  page = 1,
+  filter: BookmarkFilter = { type: "all" }
+): Promise<BookmarksResponse> {
+  const params = new URLSearchParams({ page: String(page) });
+
+  if (filter.type === "favorites") {
+    params.set("favorite", "true");
+  } else if (filter.type === "tag") {
+    params.set("tag", filter.id);
+  } else if (filter.type === "collection") {
+    params.set("collection", filter.id);
+  }
+
+  const response = await apiFetch(`/bookmarks?${params.toString()}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch bookmarks: ${response.status}`);

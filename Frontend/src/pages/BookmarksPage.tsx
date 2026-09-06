@@ -3,21 +3,49 @@ import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
 import { fetchBookmarks, toggleFavorite } from "../api/bookmarks";
-import type { Bookmark } from "../types/bookmark";
+import type { Bookmark, BookmarkFilter } from "../types/bookmark";
 
-const BookmarksPage = () => {
+type BookmarksPageProps = {
+  filter: BookmarkFilter;
+};
+
+const filterTitle = (filter: BookmarkFilter): string => {
+  switch (filter.type) {
+    case "favorites":
+      return "Favorites";
+    case "tag":
+      return `#${filter.name}`;
+    case "collection":
+      return filter.name;
+    default:
+      return "All Bookmarks";
+  }
+};
+
+const BookmarksPage = ({ filter }: BookmarksPageProps) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Track the prev filter in render to clear selection synchronously without effect state updates
+  const [prevFilter, setPrevFilter] = useState(filter);
+  if (prevFilter !== filter) {
+    setPrevFilter(filter);
+    setSelectedId(null);
+    setIsLoading(true);
+  }
+
   useEffect(() => {
     let isMounted = true;
 
-    fetchBookmarks()
+    fetchBookmarks(1, filter)
       .then((data) => {
-        if (isMounted) setBookmarks(data.bookmarks);
+        if (isMounted) {
+          setBookmarks(data.bookmarks);
+          setError(null);
+        }
       })
       .catch((err) => {
         if (isMounted) setError(err.message);
@@ -29,7 +57,7 @@ const BookmarksPage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [filter]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedId) ?? null;
 
@@ -38,7 +66,6 @@ const BookmarksPage = () => {
   };
 
   const handleToggleFavorite = async (id: string) => {
-    // Optimistic: flip immediately, roll back if the API call fails.
     setBookmarks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
     );
@@ -47,7 +74,6 @@ const BookmarksPage = () => {
       const updated = await toggleFavorite(id);
       setBookmarks((prev) => prev.map((b) => (b.id === id ? updated : b)));
     } catch {
-      // Roll back on failure
       setBookmarks((prev) =>
         prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
       );
@@ -61,7 +87,7 @@ const BookmarksPage = () => {
           <header className="mb-8 flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-                All Bookmarks
+                {filterTitle(filter)}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
                 {isLoading ? "Loading…" : `${bookmarks.length} bookmarks`}
@@ -95,7 +121,7 @@ const BookmarksPage = () => {
               {isLoading ? (
                 <p className="text-sm text-gray-400">Loading bookmarks…</p>
               ) : bookmarks.length === 0 ? (
-                <p className="text-sm text-gray-400">No bookmarks yet.</p>
+                <p className="text-sm text-gray-400">No bookmarks here yet.</p>
               ) : (
                 bookmarks.map((bookmark) => (
                   <BookmarkCard
@@ -113,17 +139,11 @@ const BookmarksPage = () => {
       </main>
 
       {selectedBookmark && (
-        <BookmarkPreview
-          bookmark={selectedBookmark}
-          onClose={() => setSelectedId(null)}
-        />
+        <BookmarkPreview bookmark={selectedBookmark} onClose={() => setSelectedId(null)} />
       )}
 
       {isModalOpen && (
-        <SaveBookmarkModal
-          onClose={() => setIsModalOpen(false)}
-          onSaved={handleSaved}
-        />
+        <SaveBookmarkModal onClose={() => setIsModalOpen(false)} onSaved={handleSaved} />
       )}
     </div>
   );

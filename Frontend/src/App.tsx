@@ -1,18 +1,24 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import BookmarksPage from "./pages/BookmarksPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import type { BookmarkFilter } from "./types/bookmark";
 
-const Dashboard = () => (
-  <div className="flex">
-    <Sidebar />
-    <div className="flex-1">
-      <BookmarksPage />
+const Dashboard = () => {
+  const [activeFilter, setActiveFilter] = useState<BookmarkFilter>({ type: "all" });
+
+  return (
+    <div className="flex">
+      <Sidebar activeFilter={activeFilter} onSelectFilter={setActiveFilter} />
+      <div className="flex-1">
+        <BookmarksPage filter={activeFilter} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 function App() {
   return (

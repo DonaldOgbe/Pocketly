@@ -23,3 +23,9 @@ export type BookmarksResponse = {
   total: number;
   totalPages: number;
 };
+
+export type BookmarkFilter =
+  | { type: "all" }
+  | { type: "favorites" }
+  | { type: "tag"; id: string; name: string }
+  | { type: "collection"; id: string; name: string };
