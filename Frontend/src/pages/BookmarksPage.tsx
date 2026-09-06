@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
-import { fetchBookmarks, toggleFavorite } from "../api/bookmarks";
+import { deleteBookmark, fetchBookmarks, toggleFavorite } from "../api/bookmarks";
 import type { Bookmark, BookmarkFilter } from "../types/bookmark";
 
 type BookmarksPageProps = {
   filter: BookmarkFilter;
 };
+
+const PAGE_SIZE = 10;
 
 const filterTitle = (filter: BookmarkFilter): string => {
   switch (filter.type) {
@@ -28,6 +31,14 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  // Drops responses superseded by a newer request.
+  const latestRequest = useRef(0);
 
   // Track the prev filter in render to clear selection synchronously without effect state updates
   const [prevFilter, setPrevFilter] = useState(filter);
@@ -35,34 +46,58 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
     setPrevFilter(filter);
     setSelectedId(null);
     setIsLoading(true);
+    setPage(1);
   }
 
   useEffect(() => {
-    let isMounted = true;
+    const requestId = latestRequest.current + 1;
+    latestRequest.current = requestId;
 
-    fetchBookmarks(1, filter)
+    fetchBookmarks(page, filter, search)
       .then((data) => {
-        if (isMounted) {
-          setBookmarks(data.bookmarks);
-          setError(null);
-        }
+        if (requestId !== latestRequest.current) return;
+        setBookmarks(data.bookmarks);
+        setTotal(data.total);
+        setTotalPages(Math.max(data.totalPages, 1));
+        setError(null);
       })
       .catch((err) => {
-        if (isMounted) setError(err.message);
+        if (requestId !== latestRequest.current) return;
+        setError(err.message);
       })
       .finally(() => {
-        if (isMounted) setIsLoading(false);
+        if (requestId === latestRequest.current) setIsLoading(false);
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [filter]);
+  }, [filter, page, search]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedId) ?? null;
 
   const handleSaved = (bookmark: Bookmark) => {
     setBookmarks((prev) => [bookmark, ...prev]);
+    setTotal((prev) => prev + 1);
+  };
+
+  const handleDelete = async (id: string) => {
+    const previous = bookmarks;
+
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    setTotal((prev) => Math.max(prev - 1, 0));
+    if (selectedId === id) setSelectedId(null);
+
+    try {
+      await deleteBookmark(id);
+    } catch (err) {
+      setBookmarks(previous);
+      setTotal((prev) => prev + 1);
+      setError(err instanceof Error ? err.message : "Couldn't delete bookmark");
+    }
+  };
+
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setPage(1);
+    setSearch(searchInput);
   };
 
   const handleToggleFavorite = async (id: string) => {
@@ -90,16 +125,34 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
                 {filterTitle(filter)}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                {isLoading ? "Loading…" : `${bookmarks.length} bookmarks`}
+                {isLoading
+                  ? "Loading…"
+                  : total === 0
+                    ? "No bookmarks"
+                    : totalPages > 1
+                      ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total} bookmarks`
+                      : `${total} ${total === 1 ? "bookmark" : "bookmarks"}`}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="text"
-                placeholder="Search bookmarks..."
-                className="hidden rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-brand-pink sm:block"
-              />
+              {/* Chrome won't submit on Enter without a submit button. */}
+              <form onSubmit={handleSearch} className="relative hidden sm:block">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search bookmarks..."
+                  className="w-56 rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-9 text-sm text-gray-700 outline-none focus:border-brand-pink"
+                />
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className="absolute right-0 top-0 flex h-full w-9 items-center justify-center text-gray-400 transition hover:text-brand-pink"
+                >
+                  <Search size={15} />
+                </button>
+              </form>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
@@ -130,10 +183,43 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
                     isSelected={bookmark.id === selectedId}
                     onClick={() => setSelectedId(bookmark.id)}
                     onToggleFavorite={() => handleToggleFavorite(bookmark.id)}
+                    onDelete={() => handleDelete(bookmark.id)}
                   />
                 ))
               )}
             </section>
+          )}
+
+          {!error && totalPages > 1 && (
+            <nav className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoading(true);
+                  setPage((p) => Math.max(p - 1, 1));
+                }}
+                disabled={page === 1}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              >
+                Previous
+              </button>
+
+              <span className="text-sm text-gray-500">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLoading(true);
+                  setPage((p) => Math.min(p + 1, totalPages));
+                }}
+                disabled={page === totalPages}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </nav>
           )}
         </div>
       </main>
