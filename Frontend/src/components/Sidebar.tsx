@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Bookmark as BookmarkIcon,
   Heart,
@@ -7,11 +7,12 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../api/auth";
-import { fetchCollections } from "../api/collection";
-import { fetchTags } from "../api/tags";
+import { fetchCollections, createCollection } from "../api/collection";
+import { fetchTags, createTag } from "../api/tags";
 import { getSessionUser, initialsFor } from "../api/session";
 import type { Collection } from "../types/collection";
 import type { Tag } from "../types/tag";
@@ -28,6 +29,10 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
   const [isTagsOpen, setIsTagsOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [newTagName, setNewTagName] = useState("");
+  const [isAddingCollection, setIsAddingCollection] = useState(false);
+  const [isAddingTag, setIsAddingTag] = useState(false);
   const sessionUser = getSessionUser();
 
   useEffect(() => {
@@ -43,6 +48,40 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const submitNewCollection = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newCollectionName.trim()) return;
+    setIsAddingCollection(true);
+    try {
+      const created = await createCollection(newCollectionName.trim());
+      setCollections((prev) => [{ ...created, _count: { bookmarks: 0 } }, ...prev]);
+      setNewCollectionName("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAddingCollection(false);
+    }
+  };
+
+  const submitNewTag = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newTagName.trim()) return;
+    setIsAddingTag(true);
+    try {
+      const created = await createTag(newTagName.trim());
+      setTags((prev) =>
+        [...prev, { ...created, _count: { bookmarks: 0 } }].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+      );
+      setNewTagName("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAddingTag(false);
+    }
   };
 
   const isAllActive = activeFilter.type === "all";
@@ -62,9 +101,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
           type="button"
           onClick={() => onSelectFilter({ type: "all" })}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-            isAllActive
-              ? "bg-brand-pink-light text-brand-pink"
-              : "text-gray-600 hover:bg-gray-50"
+            isAllActive ? "bg-brand-pink-light text-brand-pink" : "text-gray-600 hover:bg-gray-50"
           }`}
         >
           <BookmarkIcon size={18} />
@@ -75,9 +112,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
           type="button"
           onClick={() => onSelectFilter({ type: "favorites" })}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-            isFavoritesActive
-              ? "bg-brand-pink-light text-brand-pink"
-              : "text-gray-600 hover:bg-gray-50"
+            isFavoritesActive ? "bg-brand-pink-light text-brand-pink" : "text-gray-600 hover:bg-gray-50"
           }`}
         >
           <Heart size={18} />
@@ -131,6 +166,18 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
                   );
                 })
               )}
+
+              <form onSubmit={submitNewCollection} className="flex items-center gap-1 px-2 pt-1">
+                <Plus size={12} className="shrink-0 text-gray-400" />
+                <input
+                  type="text"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="New collection"
+                  disabled={isAddingCollection}
+                  className="w-full border-none bg-transparent py-1 text-xs text-gray-600 outline-none placeholder:text-gray-400"
+                />
+              </form>
             </div>
           )}
         </div>
@@ -160,9 +207,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
                     <button
                       key={tag.id}
                       type="button"
-                      onClick={() =>
-                        onSelectFilter({ type: "tag", id: tag.id, name: tag.name })
-                      }
+                      onClick={() => onSelectFilter({ type: "tag", id: tag.id, name: tag.name })}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
                         isActive
                           ? "bg-brand-pink-light text-brand-pink"
@@ -175,6 +220,18 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
                   );
                 })
               )}
+
+              <form onSubmit={submitNewTag} className="flex items-center gap-1 px-2 pt-1">
+                <Plus size={12} className="shrink-0 text-gray-400" />
+                <input
+                  type="text"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  placeholder="New tag"
+                  disabled={isAddingTag}
+                  className="w-full border-none bg-transparent py-1 text-xs text-gray-600 outline-none placeholder:text-gray-400"
+                />
+              </form>
             </div>
           )}
         </div>

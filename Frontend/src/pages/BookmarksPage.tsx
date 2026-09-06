@@ -4,7 +4,11 @@ import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
 import { deleteBookmark, fetchBookmarks, toggleFavorite } from "../api/bookmarks";
+import { fetchCollections } from "../api/collection";
+import { fetchTags } from "../api/tags";
 import type { Bookmark, BookmarkFilter } from "../types/bookmark";
+import type { Collection } from "../types/collection";
+import type { Tag } from "../types/tag";
 
 type BookmarksPageProps = {
   filter: BookmarkFilter;
@@ -36,11 +40,11 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
-  // Drops responses superseded by a newer request.
   const latestRequest = useRef(0);
 
-  // Track the prev filter in render to clear selection synchronously without effect state updates
   const [prevFilter, setPrevFilter] = useState(filter);
   if (prevFilter !== filter) {
     setPrevFilter(filter);
@@ -48,6 +52,11 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
     setIsLoading(true);
     setPage(1);
   }
+
+  useEffect(() => {
+    fetchCollections().then(setCollections).catch((err) => console.error("Failed to load collections", err));
+    fetchTags().then(setTags).catch((err) => console.error("Failed to load tags", err));
+  }, []);
 
   useEffect(() => {
     const requestId = latestRequest.current + 1;
@@ -73,7 +82,11 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
   const selectedBookmark = bookmarks.find((b) => b.id === selectedId) ?? null;
 
   const handleSaved = (bookmark: Bookmark) => {
-    setBookmarks((prev) => [bookmark, ...prev]);
+    // POST /bookmarks doesn't include tags/collections, default to empty
+    setBookmarks((prev) => [
+      { ...bookmark, tags: bookmark.tags ?? [], collections: bookmark.collections ?? [] },
+      ...prev,
+    ]);
     setTotal((prev) => prev + 1);
   };
 
@@ -107,12 +120,19 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
 
     try {
       const updated = await toggleFavorite(id);
-      setBookmarks((prev) => prev.map((b) => (b.id === id ? updated : b)));
+      // PATCH response also lacks tags/collections, preserve what we already had
+      setBookmarks((prev) =>
+        prev.map((b) => (b.id === id ? { ...updated, tags: b.tags, collections: b.collections } : b))
+      );
     } catch {
       setBookmarks((prev) =>
         prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
       );
     }
+  };
+
+  const updateBookmarkRelations = (id: string, updater: (bookmark: Bookmark) => Bookmark) => {
+    setBookmarks((prev) => prev.map((b) => (b.id === id ? updater(b) : b)));
   };
 
   return (
@@ -136,7 +156,6 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Chrome won't submit on Enter without a submit button. */}
               <form onSubmit={handleSearch} className="relative hidden sm:block">
                 <input
                   type="text"
@@ -225,7 +244,13 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
       </main>
 
       {selectedBookmark && (
-        <BookmarkPreview bookmark={selectedBookmark} onClose={() => setSelectedId(null)} />
+        <BookmarkPreview
+          bookmark={selectedBookmark}
+          collections={collections}
+          tags={tags}
+          onClose={() => setSelectedId(null)}
+          onUpdateRelations={updateBookmarkRelations}
+        />
       )}
 
       {isModalOpen && (
