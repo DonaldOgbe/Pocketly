@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
-import { fetchBookmarks } from "../api/bookmarks";
+import { fetchBookmarks, toggleFavorite } from "../api/bookmarks";
 import type { Bookmark } from "../types/bookmark";
 
 const BookmarksPage = () => {
@@ -35,6 +35,23 @@ const BookmarksPage = () => {
 
   const handleSaved = (bookmark: Bookmark) => {
     setBookmarks((prev) => [bookmark, ...prev]);
+  };
+
+  const handleToggleFavorite = async (id: string) => {
+    // Optimistic: flip immediately, roll back if the API call fails.
+    setBookmarks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
+    );
+
+    try {
+      const updated = await toggleFavorite(id);
+      setBookmarks((prev) => prev.map((b) => (b.id === id ? updated : b)));
+    } catch {
+      // Roll back on failure
+      setBookmarks((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b))
+      );
+    }
   };
 
   return (
@@ -86,6 +103,7 @@ const BookmarksPage = () => {
                     bookmark={bookmark}
                     isSelected={bookmark.id === selectedId}
                     onClick={() => setSelectedId(bookmark.id)}
+                    onToggleFavorite={() => handleToggleFavorite(bookmark.id)}
                   />
                 ))
               )}
