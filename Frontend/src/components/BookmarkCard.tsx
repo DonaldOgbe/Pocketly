@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { Bookmark } from "../types/bookmark";
 
 type BookmarkCardProps = {
@@ -5,6 +7,7 @@ type BookmarkCardProps = {
   isSelected?: boolean;
   onClick?: () => void;
   onToggleFavorite?: () => void;
+  onDelete?: () => void;
 };
 
 const BookmarkCard = ({
@@ -12,7 +15,10 @@ const BookmarkCard = ({
   isSelected = false,
   onClick,
   onToggleFavorite,
+  onDelete,
 }: BookmarkCardProps) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   return (
     <article
       onClick={onClick}
@@ -49,21 +55,60 @@ const BookmarkCard = ({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite?.();
-        }}
-        className={`shrink-0 self-start text-xl transition hover:scale-110 ${
-          bookmark.isFavorite ? "text-brand-green" : "text-gray-300"
-        }`}
-        aria-label={
-          bookmark.isFavorite ? "Remove from favorites" : "Add to favorites"
-        }
-      >
-        {bookmark.isFavorite ? "★" : "☆"}
-      </button>
+      <div className="flex shrink-0 flex-col items-center gap-1 self-start">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite?.();
+          }}
+          className={`text-xl leading-none transition hover:scale-110 ${
+            bookmark.isFavorite ? "text-brand-green" : "text-gray-300"
+          }`}
+          aria-label={
+            bookmark.isFavorite ? "Remove from favorites" : "Add to favorites"
+          }
+        >
+          {bookmark.isFavorite ? "★" : "☆"}
+        </button>
+
+        {confirmingDelete ? (
+          <div
+            className="flex flex-col items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingDelete(false);
+                onDelete?.();
+              }}
+              className="rounded-md bg-brand-pink px-2 py-1 text-xs font-medium text-white"
+            >
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmingDelete(true);
+            }}
+            className="rounded-lg p-1 text-gray-300 transition hover:text-brand-pink"
+            aria-label="Delete bookmark"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
     </article>
   );
 };

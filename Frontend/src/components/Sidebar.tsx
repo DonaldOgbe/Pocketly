@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { logout } from "../api/auth";
 import { fetchCollections } from "../api/collection";
 import { fetchTags } from "../api/tags";
+import { getSessionUser, initialsFor } from "../api/session";
 import type { Collection } from "../types/collection";
 import type { Tag } from "../types/tag";
 import type { BookmarkFilter } from "../types/bookmark";
@@ -27,6 +28,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
   const [isTagsOpen, setIsTagsOpen] = useState(false);
+  const sessionUser = getSessionUser();
 
   useEffect(() => {
     fetchCollections()
@@ -180,11 +182,13 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
 
       <div className="flex items-center gap-3 border-t border-gray-200 px-4 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-pink text-sm font-semibold text-white">
-          DO
+          {sessionUser ? initialsFor(sessionUser.email) : "?"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-gray-900">Donald Ogbe</p>
-          <p className="truncate text-xs text-gray-500">donald@example.com</p>
+          <p className="truncate text-sm font-medium text-gray-900">
+            {sessionUser?.email.split("@")[0] ?? "Signed in"}
+          </p>
+          <p className="truncate text-xs text-gray-500">{sessionUser?.email ?? ""}</p>
         </div>
         <button
           type="button"

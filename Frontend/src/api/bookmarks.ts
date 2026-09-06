@@ -4,9 +4,14 @@ import type { BookmarksResponse, Bookmark, BookmarkFilter } from "../types/bookm
 
 export async function fetchBookmarks(
   page = 1,
-  filter: BookmarkFilter = { type: "all" }
+  filter: BookmarkFilter = { type: "all" },
+  search?: string
 ): Promise<BookmarksResponse> {
   const params = new URLSearchParams({ page: String(page) });
+
+  if (search?.trim()) {
+    params.set("q", search.trim());
+  }
 
   if (filter.type === "favorites") {
     params.set("favorite", "true");
@@ -50,4 +55,15 @@ export async function toggleFavorite(id: string): Promise<Bookmark> {
   }
 
   return response.json();
+}
+
+export async function deleteBookmark(id: string): Promise<void> {
+  const response = await apiFetch(`/bookmarks/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? `Failed to delete bookmark: ${response.status}`);
+  }
 }
