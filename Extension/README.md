@@ -1,75 +1,44 @@
-# React + TypeScript + Vite
+# Pocketly Browser Extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight browser extension for saving bookmarks to Pocketly from any tab, without leaving the page you're on. Save the current tab, assign it to a collection and tags, and mark it as a favorite — all from the popup.
 
-Currently, two official plugins are available:
+Cross-browser (Chrome + Firefox), built with Vite + React + TypeScript + Tailwind, sharing the same visual theme (Inter font, pink/green palette) as the Pocketly web app.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd Extension
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Make sure the Pocketly backend is running locally on `http://localhost:3000` (see the Backend README) — the extension talks to it directly, same as the web app.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run build
 ```
+
+This outputs an unpacked extension to `Extension/dist/`. Load it into your browser:
+
+**Chrome**
+1. Go to `chrome://extensions`
+2. Enable **Developer mode** (top right)
+3. Click **Load unpacked** → select `Extension/dist`
+
+**Firefox**
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on**
+3. Select any file inside `Extension/dist` (e.g. `manifest.json`)
+
+
+### First use
+
+1. Open the popup (extension icon in the toolbar)
+2. Log in with a Pocketly account (register first on the web app if you don't have one — there's a link in the popup)
+3. Navigate to any page, open the popup, optionally pick a collection/tags, hit **Save**
+
+
