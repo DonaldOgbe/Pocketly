@@ -10,9 +10,6 @@ export default defineConfig({
     webExtension({
       manifest: "src/manifest.json",
       browser: "chrome",
-      webExtConfig: {
-        target: undefined,
-      },
     }),
   ],
 });
