@@ -31,8 +31,15 @@ export type BookmarksResponse = {
   totalPages: number;
 };
 
-export type BookmarkFilter =
+export type BookmarkScope =
   | { type: "all" }
   | { type: "favorites" }
-  | { type: "tag"; id: string; name: string }
   | { type: "collection"; id: string; name: string };
+
+// Scope and tag apply together, so a tag narrows whichever scope is selected.
+export type BookmarkFilter = {
+  scope: BookmarkScope;
+  tag?: BookmarkRef;
+};
+
+export const DEFAULT_FILTER: BookmarkFilter = { scope: { type: "all" } };

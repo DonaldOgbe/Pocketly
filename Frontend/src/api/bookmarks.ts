@@ -1,10 +1,11 @@
 import { apiFetch } from "./client";
+import { DEFAULT_FILTER } from "../types/bookmark";
 import type { BookmarksResponse, Bookmark, BookmarkFilter } from "../types/bookmark";
 
 
 export async function fetchBookmarks(
   page = 1,
-  filter: BookmarkFilter = { type: "all" },
+  filter: BookmarkFilter = DEFAULT_FILTER,
   search?: string
 ): Promise<BookmarksResponse> {
   const params = new URLSearchParams({ page: String(page) });
@@ -13,12 +14,14 @@ export async function fetchBookmarks(
     params.set("q", search.trim());
   }
 
-  if (filter.type === "favorites") {
+  if (filter.scope.type === "favorites") {
     params.set("favorite", "true");
-  } else if (filter.type === "tag") {
-    params.set("tag", filter.id);
-  } else if (filter.type === "collection") {
-    params.set("collection", filter.id);
+  } else if (filter.scope.type === "collection") {
+    params.set("collection", filter.scope.id);
+  }
+
+  if (filter.tag) {
+    params.set("tag", filter.tag.id);
   }
 
   const response = await apiFetch(`/bookmarks?${params.toString()}`);

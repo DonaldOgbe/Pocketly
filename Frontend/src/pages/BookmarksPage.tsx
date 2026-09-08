@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
@@ -12,24 +12,23 @@ import type { Tag } from "../types/tag";
 
 type BookmarksPageProps = {
   filter: BookmarkFilter;
+  onSelectFilter: (filter: BookmarkFilter) => void;
 };
 
 const PAGE_SIZE = 10;
 
 const filterTitle = (filter: BookmarkFilter): string => {
-  switch (filter.type) {
+  switch (filter.scope.type) {
     case "favorites":
       return "Favorites";
-    case "tag":
-      return `#${filter.name}`;
     case "collection":
-      return filter.name;
+      return filter.scope.name;
     default:
       return "All Bookmarks";
   }
 };
 
-const BookmarksPage = ({ filter }: BookmarksPageProps) => {
+const BookmarksPage = ({ filter, onSelectFilter }: BookmarksPageProps) => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,9 +140,22 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
         <div className="mx-auto max-w-4xl px-8 py-10">
           <header className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-                {filterTitle(filter)}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+                  {filterTitle(filter)}
+                </h1>
+                {filter.tag && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectFilter({ ...filter, tag: undefined })}
+                    className="flex items-center gap-1 rounded-full bg-brand-pink-light px-2.5 py-1 text-sm font-medium text-brand-pink"
+                    aria-label={`Remove ${filter.tag.name} tag filter`}
+                  >
+                    {filter.tag.name}
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
               <p className="mt-1 text-sm text-gray-500">
                 {isLoading
                   ? "Loading…"
@@ -203,6 +215,8 @@ const BookmarksPage = ({ filter }: BookmarksPageProps) => {
                     onClick={() => setSelectedId(bookmark.id)}
                     onToggleFavorite={() => handleToggleFavorite(bookmark.id)}
                     onDelete={() => handleDelete(bookmark.id)}
+                    activeTagId={filter.tag?.id}
+                    onSelectTag={(tag) => onSelectFilter({ ...filter, tag })}
                   />
                 ))
               )}

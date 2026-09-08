@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import type { Bookmark } from "../types/bookmark";
+import type { Bookmark, BookmarkRef } from "../types/bookmark";
 
 type BookmarkCardProps = {
   bookmark: Bookmark;
@@ -8,6 +8,8 @@ type BookmarkCardProps = {
   onClick?: () => void;
   onToggleFavorite?: () => void;
   onDelete?: () => void;
+  onSelectTag?: (tag: BookmarkRef) => void;
+  activeTagId?: string;
 };
 
 const BookmarkCard = ({
@@ -16,6 +18,8 @@ const BookmarkCard = ({
   onClick,
   onToggleFavorite,
   onDelete,
+  onSelectTag,
+  activeTagId,
 }: BookmarkCardProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -53,6 +57,28 @@ const BookmarkCard = ({
           )}
           <span className="text-sm text-gray-500">{bookmark.domain}</span>
         </div>
+
+        {bookmark.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {bookmark.tags.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTag?.(tag);
+                }}
+                className={`rounded-full px-2 py-0.5 text-xs transition ${
+                  tag.id === activeTagId
+                    ? "bg-brand-pink text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-brand-pink-light hover:text-brand-pink"
+                }`}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 flex-col items-center gap-1 self-start">
