@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import browser from "webextension-polyfill";
-import { Search, Heart, X } from "lucide-react";
+import { Search, Heart, X, Check, BookmarkCheck, AlertCircle } from "lucide-react";
 import { createBookmark } from "../api/bookmark";
 import { fetchCollections, addBookmarkToCollection } from "../api/collection";
 import { fetchTags, createTag, addBookmarkToTag } from "../api/tag";
@@ -38,6 +38,9 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [alreadySaved, setAlreadySaved] = useState(false);
+
+  const appliedExtras = Boolean(selectedCollectionId) || selectedTagNames.length > 0;
 
   useEffect(() => {
     browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
@@ -86,9 +89,13 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
     if (!tabInfo) return;
     setIsSaving(true);
     setError(null);
+    setAlreadySaved(false);
 
     try {
-      const bookmark = await createBookmark(tabInfo.url, isFavorite);
+      const { bookmark, alreadySaved: existed } = await createBookmark(
+        tabInfo.url,
+        isFavorite
+      );
 
       if (selectedCollectionId) {
         await addBookmarkToCollection(selectedCollectionId, bookmark.id);
@@ -100,6 +107,11 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
         await addBookmarkToTag(tag.id, bookmark.id);
       }
 
+      if (existed) {
+        setAlreadySaved(true);
+        return;
+      }
+
       setIsSaved(true);
       setTimeout(() => window.close(), 900);
     } catch (err) {
@@ -107,6 +119,7 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
         onSessionExpired();
         return;
       }
+
       setError(err instanceof Error ? err.message : "Failed to save bookmark");
     } finally {
       setIsSaving(false);
@@ -121,14 +134,37 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
     return (
       <div className="flex w-[360px] flex-col items-center justify-center gap-2 bg-white p-8 font-sans">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-green-light text-brand-green">
-          ✓
+          <Check size={20} />
         </div>
         <p className="text-sm font-medium text-gray-900">Saved to Pocketly</p>
       </div>
     );
   }
 
-  const logoUrl = chrome.runtime.getURL("icons/icon48.png");
+  if (alreadySaved) {
+    return (
+      <div className="flex w-[360px] flex-col items-center justify-center gap-2 bg-white p-8 font-sans">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-pink-light text-brand-pink">
+          <BookmarkCheck size={20} />
+        </div>
+        <p className="text-sm font-medium text-gray-900">Already in your list</p>
+        <p className="text-xs text-gray-500">
+          {appliedExtras
+            ? "Your collection and tags have been applied."
+            : "This page is already saved to Pocketly."}
+        </p>
+        <button
+          type="button"
+          onClick={openFullApp}
+          className="mt-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+        >
+          Open Pocketly
+        </button>
+      </div>
+    );
+  }
+
+  const logoUrl = browser.runtime.getURL("icons/icon48.png");
 
   return (
     <div className="w-[360px] bg-white font-sans">
@@ -245,7 +281,12 @@ const AddBookmarkView = ({ onSessionExpired }: AddBookmarkViewProps) => {
           </div>
         </div>
 
-        {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
+        {error && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2">
+            <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-600" />
+            <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end border-t border-gray-100 px-4 py-3">

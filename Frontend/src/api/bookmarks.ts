@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, ApiError } from "./client";
 import type { BookmarksResponse, Bookmark, BookmarkFilter } from "../types/bookmark";
 
 
@@ -38,7 +38,10 @@ export async function createBookmark(url: string): Promise<Bookmark> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? `Failed to save bookmark: ${response.status}`);
+    throw new ApiError(
+      response.status,
+      body?.error ?? `Failed to save bookmark: ${response.status}`
+    );
   }
 
   return response.json();
