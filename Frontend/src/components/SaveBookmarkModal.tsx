@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { X } from "lucide-react";
 import { createBookmark } from "../api/bookmarks";
+import { ApiError } from "../api/client";
 import type { Bookmark } from "../types/bookmark";
 
 type SaveBookmarkModalProps = {
@@ -11,11 +12,13 @@ type SaveBookmarkModalProps = {
 const SaveBookmarkModal = ({ onClose, onSaved }: SaveBookmarkModalProps) => {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [alreadySaved, setAlreadySaved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setAlreadySaved(false);
     setIsSubmitting(true);
 
     try {
@@ -23,6 +26,11 @@ const SaveBookmarkModal = ({ onClose, onSaved }: SaveBookmarkModalProps) => {
       onSaved(bookmark);
       onClose();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setAlreadySaved(true);
+        return;
+      }
+
       setError(err instanceof Error ? err.message : "Failed to save bookmark");
     } finally {
       setIsSubmitting(false);
@@ -68,6 +76,12 @@ const SaveBookmarkModal = ({ onClose, onSaved }: SaveBookmarkModalProps) => {
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {alreadySaved && (
+            <p className="text-sm text-gray-600">
+              That link is already in your list.
+            </p>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <button

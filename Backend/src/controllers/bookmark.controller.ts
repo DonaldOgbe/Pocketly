@@ -1,6 +1,7 @@
 import { URL } from "node:url";
 import type { Request, Response } from "express";
 import prisma from "../db.js";
+import { isUniqueConstraintError } from "../prisma-errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { getMetadata } from "../services/metadata.service.js";
 
@@ -96,6 +97,17 @@ export const saveBookmark = async (req: Request, res: Response) => {
 
     return res.status(201).json(bookmark);
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const existing = await prisma.bookmark.findUnique({
+        where: { userId_url: { userId: req.user.id, url } },
+      });
+
+      return res.status(409).json({
+        error: "Bookmark already saved",
+        bookmark: existing,
+      });
+    }
+
     console.error(error);
 
     return res.status(500).json({
