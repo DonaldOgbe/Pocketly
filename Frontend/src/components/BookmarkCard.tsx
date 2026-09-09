@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2, Undo2 } from "lucide-react";
 import type { Bookmark, BookmarkRef } from "../types/bookmark";
 
 type BookmarkCardProps = {
@@ -8,6 +8,7 @@ type BookmarkCardProps = {
   onClick?: () => void;
   onToggleFavorite?: () => void;
   onDelete?: () => void;
+  onToggleRead?: () => void;
   onSelectTag?: (tag: BookmarkRef) => void;
   activeTagId?: string;
 };
@@ -18,6 +19,7 @@ const BookmarkCard = ({
   onClick,
   onToggleFavorite,
   onDelete,
+  onToggleRead,
   onSelectTag,
   activeTagId,
 }: BookmarkCardProps) => {
@@ -30,7 +32,7 @@ const BookmarkCard = ({
         isSelected
           ? "border-brand-pink bg-brand-pink-light"
           : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-      }`}
+      } ${bookmark.isRead ? "opacity-60" : ""}`}
     >
       <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
         {bookmark.thumbnail ? (
@@ -47,7 +49,11 @@ const BookmarkCard = ({
       </div>
 
       <div className="min-w-0 flex-1">
-        <h2 className="line-clamp-2 text-base font-semibold text-gray-900">
+        <h2
+          className={`line-clamp-2 text-base font-semibold ${
+            bookmark.isRead ? "text-gray-500" : "text-gray-900"
+          }`}
+        >
           {bookmark.title ?? "Untitled page"}
         </h2>
 
@@ -96,6 +102,23 @@ const BookmarkCard = ({
           }
         >
           {bookmark.isFavorite ? "★" : "☆"}
+        </button>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleRead?.();
+          }}
+          className={`rounded-lg p-1 transition ${
+            bookmark.isRead
+              ? "text-brand-green hover:text-brand-green"
+              : "text-gray-300 hover:text-brand-green"
+          }`}
+          aria-label={bookmark.isRead ? "Mark as unread" : "Mark as read"}
+          aria-pressed={bookmark.isRead}
+        >
+          {bookmark.isRead ? <Undo2 size={16} /> : <Check size={16} />}
         </button>
 
         {confirmingDelete ? (

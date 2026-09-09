@@ -164,7 +164,7 @@ export const getBookmark = async (req: Request, res: Response) => {
   const limit = 10;
   const skip = (page - 1) * limit;
 
-  const { tag, collection, favorite } = req.query;
+  const { tag, collection, favorite, read } = req.query;
 
   // `q` is the documented name; `search` is accepted so existing callers keep
   // working.
@@ -174,6 +174,10 @@ export const getBookmark = async (req: Request, res: Response) => {
 
   if (favorite === "true") {
     where.isFavorite = true;
+  }
+
+  if (read === "true" || read === "false") {
+    where.isRead = read === "true";
   }
 
   if (typeof search === "string" && search.trim()) {
