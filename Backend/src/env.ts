@@ -27,3 +27,8 @@ export const JWT_SECRET = required("JWT_SECRET");
 export const JWT_EXPIRES_IN = process.env["JWT_EXPIRES_IN"] ?? "7d";
 export const PORT = numberOr("PORT", 3000);
 export const BCRYPT_SALT_ROUNDS = numberOr("BCRYPT_SALT_ROUNDS", 12);
+
+export const CORS_ORIGINS = (process.env["CORS_ORIGINS"] ?? "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);

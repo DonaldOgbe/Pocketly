@@ -1,13 +1,13 @@
 import cors from "cors";
+import { CORS_ORIGINS } from "../env.js";
 
-const allowedOrigins = ["http://localhost:5173"];
 const extensionOriginPattern = /^(chrome|moz)-extension:\/\//;
 
 const corsOptions = cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin) || extensionOriginPattern.test(origin)) {
+    if (CORS_ORIGINS.includes(origin) || extensionOriginPattern.test(origin)) {
       return callback(null, true);
     }
 

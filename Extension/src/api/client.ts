@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
+import { API_BASE_URL } from "../config";
 
-export const API_BASE_URL = "http://localhost:3000";
+export { API_BASE_URL } from "../config";
 
 const TOKEN_KEY = "token";
 
