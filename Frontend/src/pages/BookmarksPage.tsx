@@ -3,7 +3,7 @@ import { Search, X } from "lucide-react";
 import BookmarkCard from "../components/BookmarkCard";
 import BookmarkPreview from "../components/BookmarkPreview";
 import SaveBookmarkModal from "../components/SaveBookmarkModal";
-import { deleteBookmark, fetchBookmarks, toggleFavorite } from "../api/bookmarks";
+import { deleteBookmark, fetchBookmarks, setRead, toggleFavorite } from "../api/bookmarks";
 import { fetchCollections } from "../api/collection";
 import { fetchTags } from "../api/tags";
 import type { Bookmark, BookmarkFilter } from "../types/bookmark";
@@ -21,6 +21,8 @@ const filterTitle = (filter: BookmarkFilter): string => {
   switch (filter.scope.type) {
     case "favorites":
       return "Favorites";
+    case "unread":
+      return "Unread";
     case "collection":
       return filter.scope.name;
     default:
@@ -102,6 +104,29 @@ const BookmarksPage = ({ filter, onSelectFilter }: BookmarksPageProps) => {
       setBookmarks(previous);
       setTotal((prev) => prev + 1);
       setError(err instanceof Error ? err.message : "Couldn't delete bookmark");
+    }
+  };
+
+  const handleToggleRead = async (bookmark: Bookmark) => {
+    const next = !bookmark.isRead;
+    const previous = bookmarks;
+
+    setBookmarks((prev) =>
+      prev.map((b) => (b.id === bookmark.id ? { ...b, isRead: next } : b))
+    );
+
+    try {
+      const updated = await setRead(bookmark.id, next);
+      setBookmarks((prev) =>
+        prev.map((b) =>
+          b.id === updated.id
+            ? { ...updated, tags: b.tags, collections: b.collections }
+            : b
+        )
+      );
+    } catch (err) {
+      setBookmarks(previous);
+      setError(err instanceof Error ? err.message : "Couldn't update bookmark");
     }
   };
 
@@ -215,6 +240,7 @@ const BookmarksPage = ({ filter, onSelectFilter }: BookmarksPageProps) => {
                     onClick={() => setSelectedId(bookmark.id)}
                     onToggleFavorite={() => handleToggleFavorite(bookmark.id)}
                     onDelete={() => handleDelete(bookmark.id)}
+                    onToggleRead={() => handleToggleRead(bookmark)}
                     activeTagId={filter.tag?.id}
                     onSelectTag={(tag) => onSelectFilter({ ...filter, tag })}
                   />

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   Bookmark as BookmarkIcon,
   Heart,
+  CircleDot,
   LayoutGrid,
   Tag as TagIcon,
   LogOut,
@@ -86,6 +87,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
 
   const isAllActive = activeFilter.scope.type === "all";
   const isFavoritesActive = activeFilter.scope.type === "favorites";
+  const isUnreadActive = activeFilter.scope.type === "unread";
 
   const selectScope = (scope: BookmarkScope) =>
     onSelectFilter({ ...activeFilter, scope });
@@ -126,6 +128,17 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
         >
           <Heart size={18} />
           Favorites
+        </button>
+
+        <button
+          type="button"
+          onClick={() => selectScope({ type: "unread" })}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+            isUnreadActive ? "bg-brand-pink-light text-brand-pink" : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <CircleDot size={18} />
+          Unread
         </button>
 
         {/* Collections dropdown */}
