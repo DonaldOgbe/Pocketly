@@ -5,16 +5,16 @@ import BookmarksPage from "./pages/BookmarksPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import type { BookmarkFilter } from "./types/bookmark";
+import { DEFAULT_FILTER, type BookmarkFilter } from "./types/bookmark";
 
 const Dashboard = () => {
-  const [activeFilter, setActiveFilter] = useState<BookmarkFilter>({ type: "all" });
+  const [activeFilter, setActiveFilter] = useState<BookmarkFilter>(DEFAULT_FILTER);
 
   return (
     <div className="flex">
       <Sidebar activeFilter={activeFilter} onSelectFilter={setActiveFilter} />
       <div className="flex-1">
-        <BookmarksPage filter={activeFilter} />
+        <BookmarksPage filter={activeFilter} onSelectFilter={setActiveFilter} />
       </div>
     </div>
   );
