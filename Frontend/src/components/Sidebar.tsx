@@ -16,7 +16,7 @@ import { fetchTags, createTag } from "../api/tags";
 import { getSessionUser, initialsFor } from "../api/session";
 import type { Collection } from "../types/collection";
 import type { Tag } from "../types/tag";
-import type { BookmarkFilter } from "../types/bookmark";
+import type { BookmarkFilter, BookmarkScope } from "../types/bookmark";
 
 type SidebarProps = {
   activeFilter: BookmarkFilter;
@@ -84,8 +84,17 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
     }
   };
 
-  const isAllActive = activeFilter.type === "all";
-  const isFavoritesActive = activeFilter.type === "favorites";
+  const isAllActive = activeFilter.scope.type === "all";
+  const isFavoritesActive = activeFilter.scope.type === "favorites";
+
+  const selectScope = (scope: BookmarkScope) =>
+    onSelectFilter({ ...activeFilter, scope });
+
+  const toggleTag = (tag: { id: string; name: string }) =>
+    onSelectFilter({
+      ...activeFilter,
+      tag: activeFilter.tag?.id === tag.id ? undefined : tag,
+    });
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col overflow-y-auto border-r border-gray-200 bg-white">
@@ -99,7 +108,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
       <nav className="flex-1 space-y-1 px-3">
         <button
           type="button"
-          onClick={() => onSelectFilter({ type: "all" })}
+          onClick={() => selectScope({ type: "all" })}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
             isAllActive ? "bg-brand-pink-light text-brand-pink" : "text-gray-600 hover:bg-gray-50"
           }`}
@@ -110,7 +119,7 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
 
         <button
           type="button"
-          onClick={() => onSelectFilter({ type: "favorites" })}
+          onClick={() => selectScope({ type: "favorites" })}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
             isFavoritesActive ? "bg-brand-pink-light text-brand-pink" : "text-gray-600 hover:bg-gray-50"
           }`}
@@ -140,13 +149,14 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
               ) : (
                 collections.map((collection) => {
                   const isActive =
-                    activeFilter.type === "collection" && activeFilter.id === collection.id;
+                    activeFilter.scope.type === "collection" &&
+                    activeFilter.scope.id === collection.id;
                   return (
                     <button
                       key={collection.id}
                       type="button"
                       onClick={() =>
-                        onSelectFilter({
+                        selectScope({
                           type: "collection",
                           id: collection.id,
                           name: collection.name,
@@ -202,12 +212,12 @@ const Sidebar = ({ activeFilter, onSelectFilter }: SidebarProps) => {
                 <p className="px-3 py-1 text-xs text-gray-400">No tags yet</p>
               ) : (
                 tags.map((tag) => {
-                  const isActive = activeFilter.type === "tag" && activeFilter.id === tag.id;
+                  const isActive = activeFilter.tag?.id === tag.id;
                   return (
                     <button
                       key={tag.id}
                       type="button"
-                      onClick={() => onSelectFilter({ type: "tag", id: tag.id, name: tag.name })}
+                      onClick={() => toggleTag({ id: tag.id, name: tag.name })}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-sm transition ${
                         isActive
                           ? "bg-brand-pink-light text-brand-pink"
