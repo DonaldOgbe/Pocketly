@@ -34,6 +34,7 @@ export type BookmarksResponse = {
 export type BookmarkScope =
   | { type: "all" }
   | { type: "favorites" }
+  | { type: "unread" }
   | { type: "collection"; id: string; name: string };
 
 // Scope and tag apply together, so a tag narrows whichever scope is selected.

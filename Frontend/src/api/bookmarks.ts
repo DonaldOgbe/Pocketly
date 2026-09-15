@@ -16,6 +16,8 @@ export async function fetchBookmarks(
 
   if (filter.scope.type === "favorites") {
     params.set("favorite", "true");
+  } else if (filter.scope.type === "unread") {
+    params.set("read", "false");
   } else if (filter.scope.type === "collection") {
     params.set("collection", filter.scope.id);
   }
@@ -72,4 +74,21 @@ export async function deleteBookmark(id: string): Promise<void> {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error ?? `Failed to delete bookmark: ${response.status}`);
   }
+}
+
+export async function setRead(id: string, isRead: boolean): Promise<Bookmark> {
+  const response = await apiFetch(`/bookmarks/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ isRead }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(
+      response.status,
+      body?.error ?? `Failed to update bookmark: ${response.status}`
+    );
+  }
+
+  return response.json();
 }
