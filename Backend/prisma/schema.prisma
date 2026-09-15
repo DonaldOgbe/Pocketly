@@ -44,6 +44,7 @@ model Bookmark {
   tags            Tag[]
 
   // GET /bookmarks filters on userId and orders by savedAt.
+  @@unique([userId, url])
   @@index([userId, savedAt])
 }
 

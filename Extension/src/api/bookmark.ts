@@ -1,16 +1,34 @@
-import { apiFetch } from "./client";
+import { apiFetch, ApiError } from "./client";
 import type { Bookmark } from "../types/bookmark";
 
-export async function createBookmark(url: string, isFavorite: boolean): Promise<Bookmark> {
+export type SaveResult = {
+  bookmark: Bookmark;
+  alreadySaved: boolean;
+};
+
+export async function createBookmark(url: string, isFavorite: boolean): Promise<SaveResult> {
   const response = await apiFetch("/bookmarks", {
     method: "POST",
     body: JSON.stringify({ url, isFavorite }),
   });
 
-  if (!response.ok) {
+  if (response.status === 409) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? `Failed to save bookmark: ${response.status}`);
+
+    // The page is already saved, so hand back the existing bookmark and let
+    // the caller finish applying the collection and tags to it.
+    if (body?.bookmark) {
+      return { bookmark: body.bookmark as Bookmark, alreadySaved: true };
+    }
   }
 
-  return response.json();
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new ApiError(
+      response.status,
+      body?.error ?? `Failed to save bookmark: ${response.status}`
+    );
+  }
+
+  return { bookmark: await response.json(), alreadySaved: false };
 }
